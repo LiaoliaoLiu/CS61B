@@ -268,7 +268,6 @@ public class Model extends Observable {
         // TODO: Fill in this function.
         boolean exist = false;
         exist = emptySpaceExists(b) ||
-                Model.mergeable(b) ||
                 Model.mergeable(b);
 
         return exist;
@@ -277,7 +276,6 @@ public class Model extends Observable {
     private static boolean mergeable(Board b) {
         int boundary = b.size();
         Tile checkTile, adjacentTile;
-        boolean mergeable = false;
 
         for (int c = 0; c < boundary; ++c) {
             for (int r = 0; r < boundary - 1; ++r) {
