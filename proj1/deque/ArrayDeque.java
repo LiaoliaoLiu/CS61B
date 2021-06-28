@@ -39,7 +39,8 @@ public class ArrayDeque<T> {
     }
 
     private void resize() {
-        T[] newArray = (T[]) new Object[size * 2];
+        int newSize = size < 8 ? 8 : size * 2;
+        T[] newArray = (T[]) new Object[newSize];
         // items copy
         for (int i = 0; i < size; ++i) {
             newArray[i] = get(i);

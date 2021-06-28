@@ -120,4 +120,15 @@ public class ArrayDequeTest {
         }
 
     }
+
+    @Test
+    /* d003) AD-basic: Random addFirst/removeLast/isEmpty tests. */
+    public void test0() {
+        ArrayDeque<Integer> ad0 = new ArrayDeque<>();
+        ad0.addFirst(0);
+        ad0.addFirst(1);
+        ad0.removeLast() ;
+        ad0.removeLast();
+        ad0.addFirst(4);
+    }
 }
