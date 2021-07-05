@@ -102,8 +102,9 @@ public class ArrayDeque<T> {
         for (int i = getClockwise(nextFirst); i <= getAntiClockwise(nextLast); ++i) {
             if (i == getAntiClockwise(nextLast)) {
                 System.out.print(items[i].toString());
+                System.out.println();
             }
-            System.out.println(items[i].toString() + " ");
+            System.out.print(items[i].toString() + " ");
         }
     }
 

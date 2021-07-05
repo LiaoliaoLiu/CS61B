@@ -76,8 +76,9 @@ public class LinkedListDeque<T> {
         while (p != sentinel) {
             if (p.next == sentinel) {
                 System.out.print(p.item.toString());
+                System.out.println();
             }
-            System.out.println(p.item.toString() + " ");
+            System.out.print(p.item.toString() + " ");
             p = p.next;
         }
     }
