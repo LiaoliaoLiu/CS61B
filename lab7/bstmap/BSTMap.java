@@ -113,13 +113,32 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
 
     /** Removes the mapping for the specified key from this map if present. */
     @Override
+    public V remove(K key) {
+        V returnKey = get(key);
+        root = remove(key, root);
+        return returnKey;
+    }
 
+    private BSTNode remove(K key, BSTNode root) {
+        if (root == null) return null;
+
+        int cmp = key.compareTo(root.key);
+        if (cmp < 0) root.left = remove(key, root.left);
+        else if (cmp > 0) root.right = remove(key, root.right);
+        else {
+            this.size --;
+            if (root.left == null) return root.right;
+            else if (root.right == null) return root.left;
+            else root = hibbardDeletion(root.right, root);
+        }
+
+        return root;
+    }
     /* An temptation to write deletion iteratively
     1. You need a special case for root deletion
     2. You need two pointers: one for the node to be deleted (prob), another for its parent.
     3. You need a flag to trace where the prob goes (left or right).
     4. Check empty BST -> Check if it's the 'root' deletion -> Traverse the tree with its parent
-    */
     public V remove(K key) {
         if (root == null) return null;
 
@@ -163,7 +182,7 @@ public class BSTMap<K extends Comparable, V> implements Map61B<K, V> {
         }
         return root;
     }
-
+    */
     private BSTNode hibbardDeletion(BSTNode x, BSTNode xParent) {
         boolean sideChanged = false;
         while (x.left != null) {
