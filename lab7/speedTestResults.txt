@@ -1,0 +1,27 @@
+InsertRandomSpeedTest
+
+Enter # strings to insert into the maps: 10000
+class bstmap.ULLMap: 0.27 sec
+class bstmap.BSTMap: 0.01 sec
+Java's Built-in TreeMap: 0.01 sec
+Java's Built-in HashMap: 0.00 sec
+
+Enter # strings to insert into the maps: 100000
+--Stack Overflow -- couldn't add 100000 strings of length 5.
+class bstmap.BSTMap: 0.05 sec
+Java's Built-in TreeMap: 0.04 sec
+Java's Built-in HashMap: 0.03 sec
+
+
+InsertInOrderSpeedTest
+Enter # strings to insert into the maps: 10000
+class bstmap.ULLMap: 0.48 sec
+class bstmap.BSTMap: 0.72 sec
+Java's Built-in TreeMap: 0.01 sec
+Java's Built-in HashMap: 0.00 sec
+
+Enter # strings to insert into the maps: 100000
+--Stack Overflow -- couldn't add 100000 strings.
+--Stack Overflow -- couldn't add 100000 strings.
+Java's Built-in TreeMap: 0.08 sec
+Java's Built-in HashMap: 0.04 sec
