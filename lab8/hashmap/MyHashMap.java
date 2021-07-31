@@ -31,6 +31,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     private int m;
     private int n = 0;
     private double loadFactor;
+    private Set<K> keySet = null;
 
     /** Constructors */
     public MyHashMap() {
@@ -182,21 +183,81 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         buckets = newTable;
     }
 
-    /** Returns a Set view of the keys contained in this map. */
+    /** Returns a Set view of the keys contained in this map without using a second instance variable to store the set of keys. */
     @Override
     public Set<K> keySet() {
-        Set<K> keys = new HashSet<>();
-        for (Collection<Node> b : buckets) {
-            for (Node x : b) {
-                if (x != null) keys.add(x.key);
-            }
-        }
-        return keys;
+        return keySet == null ? (keySet = new KeySet()) : keySet;
+    }
+
+    final class KeySet extends AbstractSet<K> {
+        public int size() { return m; }
+
+        public void clear() { MyHashMap.this.clear(); }
+
+        public Iterator<K> iterator() { return new KeyIterator(); }
     }
 
     @Override
     public Iterator<K> iterator() {
-        return keySet().iterator();
+        return new KeyIterator();
+    }
+
+    private class KeyIterator implements Iterator<K> {
+        Iterator<Node> mapIter;
+
+        public KeyIterator() {
+            mapIter = new MapIterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return mapIter.hasNext();
+        }
+
+        @Override
+        public K next() {
+            return mapIter.next().key;
+        }
+
+    }
+
+    private class MapIterator implements Iterator<Node>{
+    Node next;
+    Node current;
+    Iterator<Node> bucketIter;
+    int index = 0;
+
+    public MapIterator() {
+        next = current = null;
+        findNextEntry();
+    }
+
+    private void findNextEntry() {
+        while (index < buckets.length && buckets[index].isEmpty()) {index++;}
+        if (index < buckets.length) {
+            bucketIter = buckets[index].iterator();
+            next = bucketIter.next();
+            index++;
+        } else {
+            next = null;
+        }
+    }
+
+        public boolean hasNext() {
+        return next != null;
+    }
+
+    public Node next() {
+        current = next;
+
+        if (bucketIter.hasNext()) {
+            next = bucketIter.next();
+        } else {
+            findNextEntry();
+        }
+
+        return current;
+        }
     }
 
     /**
@@ -204,12 +265,26 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * Not required for Lab 8. If you don't implement this, throw an
      * UnsupportedOperationException.
      */
-    public V remove(K key) {throw new UnsupportedOperationException();}
+    @Override
+    public V remove(K key) {
+        Node x = getNode(key);
+        if (x != null) {
+            int i = getIndex(key);
+            buckets[i].remove(x);
+            n--;
+            V returnVal = x.value;
+            return returnVal;
+        }
+        return null;
+    }
 
     /**
      * Removes the entry for the specified key only if it is currently mapped to
      * the specified value. Not required for Lab 8. If you don't implement this,
      * throw an UnsupportedOperationException.
      */
-    public V remove(K key, V value) {throw new UnsupportedOperationException();}
+    public V remove(K key, V value) {
+        if (get(key) == value) return remove(key);
+        return null;
+    }
 }
