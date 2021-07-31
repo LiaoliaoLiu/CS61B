@@ -1,0 +1,25 @@
+## InsertRandomSpeedTest
+|   Type\N    | 1,000 | 10,000 | 100,000 | 1,000,000 | 10,000,000 |
+| :---------: | :---: | :----: | :-----: | :-------: | :--------: |
+|   ULLMap    | 0.01  |  0.25  |   N/A   |    N/A    |    N/A     |
+|  MyHashMap  | 0.01  |  0.02  |  0.10   |   0.94    |    9.18    |
+| JavaHashMap | 0.00  |  0.01  |  0.03   |   0.40    |    3.39    |
+
+Q. When would it be better to use a `BSTMap`/`TreeMap` instead of a `HashMap`?
+
+A. When keys are comparable and the map size is very large. Because:
+1. The property of HashMap determines that it has extra memory usage for those unfilled buckets, which is $\Omega (1-loadFactor)$.
+2. When the map is large, $\log (N)$'s power gets released.
+
+## Change Bucket Types: Speed Test
+|       Type\N       | 1,000 | 10,000 | 100,000 | 1,000,000 | 10,000,000 |
+| :----------------: | :---: | :----: | :-----: | :-------: | :--------: |
+| MyHashMapALBuckets | 0.01  |  0.02  |  0.12   |   1.15    |   10.68    |
+| MyHashMapALBuckets | 0.00  |  0.01  |  0.11   |   1.23    |   10.04    |
+| MyHashMapTSBuckets | 0.01  |  0.02  |  0.17   |   1.63    |   13.92    |
+| MyHashMapHSBuckets | 0.00  |  0.02  |  0.17   |   1.85    |   18.59    |
+| MyHashMapPQBuckets | 0.00  |  0.01  |  0.13   |   1.48    |   11.93    |
+
+Q. Would our hash table speed up if we were able to use a logarithmic search over the TreeSet or a constant-time search over the HashSet?
+
+A. No, it won't. Because we have a load factor threshold 0.75, which means there are more buckets than nodes (key-value pair). Ideally those nodes are evenly distributed on the buckets, so there should be no collided keys and there search is a constant-time operation no matter what bucket we choose.
