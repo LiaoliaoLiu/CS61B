@@ -24,6 +24,19 @@ public class Repository {
     public static final File CWD = new File(System.getProperty("user.dir"));
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
+    /** The Commits directory. */
+    public static final File COMMITS_DIR = join(GITLET_DIR, "commits");
+    /** The blobs directory. */
+    public static final File BLOBS_DIR = join(GITLET_DIR, "blobs");
 
     /* TODO: fill in the rest of this class. */
+    public static void init() {
+        Main.terminateWithMsg(GITLET_DIR.exists(), "A Gitlet version-control system already exists in the current directory.");
+
+        GITLET_DIR.mkdir();
+        COMMITS_DIR.mkdir();
+        BLOBS_DIR.mkdir();
+        Commit initCommit = new Commit("initial commit");
+        new Branches(initCommit.save());
+    }
 }
