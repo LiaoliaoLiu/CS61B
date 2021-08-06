@@ -5,6 +5,7 @@ import static gitlet.Utils.*;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.HashMap;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -24,12 +25,21 @@ public class Commit implements Serializable {
     /** The message of this Commit. */
     private String message;
     /** The timestamp of this Commit. */
-    private String timestamp;
+    private Date timestamp;
+    /** The name-sha1 map of blobs */
+    public HashMap<String, String> blobs;
+    // TODO: parent's commit
 
     /* TODO: fill in the rest of this class. */
+    public Commit() {
+        this.message = "initial commit";
+        this.timestamp = new Date(0);
+        blobs = new HashMap<>();
+    }
+
     public Commit(String msg) {
         this.message = msg;
-        this.timestamp = msg == "initial commit" ? new Date(0).toString() : new Date().toString();
+        this.timestamp = new Date();
     }
 
     /** Save a commit and return the sha1 string of the commit. */
@@ -40,4 +50,14 @@ public class Commit implements Serializable {
         writeContents(commit, data);
         return commitS;
     }
+
+    public static Commit readCommit(String hash) {
+        File commit = join(Repository.COMMITS_DIR, hash);
+        return readObject(commit, Commit.class);
+    }
+
+    public String getBlobHash(String filename) {
+        return blobs.get(filename);
+    }
+
 }

@@ -22,6 +22,8 @@ public class Main {
                 break;
             case "add":
                 // TODO: handle the `add [filename]` command
+                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                Repository.add(args[1]);
                 break;
             // TODO: FILL THE REST IN
             default:

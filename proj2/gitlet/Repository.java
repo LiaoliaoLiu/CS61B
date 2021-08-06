@@ -1,6 +1,10 @@
 package gitlet;
 
 import java.io.File;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -36,7 +40,15 @@ public class Repository {
         GITLET_DIR.mkdir();
         COMMITS_DIR.mkdir();
         BLOBS_DIR.mkdir();
-        Commit initCommit = new Commit("initial commit");
-        new Branches(initCommit.save());
+        Commit initCommit = new Commit();
+        new State(initCommit.save());
     }
+
+    public static void add(String filename) {
+        State currentState = State.readState();
+        currentState.addFile(filename);
+        currentState.save();
+    }
+
+
 }
