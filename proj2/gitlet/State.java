@@ -2,13 +2,14 @@ package gitlet;
 
 import static gitlet.Utils.*;
 import java.io.File;
+import java.io.Serializable;
 import java.util.HashMap;
 
-public class Branches {
+public class State implements Serializable {
     /** The name-SHA1 HashMap. */
     private HashMap<String, String> branches;
-    /** The file stores branches. */
-    File BRANCHES = join(Repository.GITLET_DIR, "branches");
+    /** The file stores branches persistence. */
+    public static final File BRANCHES = join(Repository.GITLET_DIR, "branches");
 
     /** Create a master branch. It should only be called by init(). */
     public Branches(String sha1) {
@@ -30,7 +31,7 @@ public class Branches {
 
     /** Save the changes to the file. */
     public void save(){
-        writeObject(BRANCHES, branches);
+        writeObject(BRANCHES, this);
     }
 }
 
