@@ -102,9 +102,26 @@ public class State implements Serializable {
         return readObject(STATE, State.class);
     }
 
-    public void clearStage() {
-        addedFiles = new HashMap<>();
-        removedFiles = new HashSet<>();
+    public void commitStage(String newCommitHash) {
+        Main.terminateWithMsg(addedFiles.isEmpty() && removedFiles.isEmpty(),
+                "No changes added to the commit.");
+
+        moveFilesInFolder(STAGE_DIR, Repository.BLOBS_DIR);
+        this.putBranch(HEAD, newCommitHash);
+        this.addedFiles = new HashMap<>();
+        this.removedFiles = new HashSet<>();
     }
+
+    private static void moveFilesInFolder(File srcFolder, File dstFolder) {
+        File[] files = srcFolder.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            try {
+                Files.move(files[i].toPath(), dstFolder.toPath().resolve(files[i].getName()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }
 

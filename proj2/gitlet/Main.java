@@ -27,7 +27,8 @@ public class Main {
                 break;
             // TODO: FILL THE REST IN
             case "commit":
-                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                terminateWithMsg(args.length > 2, "Incorrect operands.");
+                terminateWithMsg(args.length == 1, "Please enter a commit message.");
                 Repository.commit(args[1], State.readState());
                 break;
             default:

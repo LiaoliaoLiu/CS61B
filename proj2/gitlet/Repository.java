@@ -1,8 +1,6 @@
 package gitlet;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 
 import static gitlet.Utils.*;
 
@@ -50,28 +48,16 @@ public class Repository {
     }
 
     /**
-     * TODO: save a snapshot of tracked files
-     * TODO: The staging area is cleared after a commit.
-     * TODO: It is not a failure for tracked files to be missing from the working directory or changed in the working directory.
-     * TODO: Gitlet doesn't support detached HEAD state.
+     * Save a snapshot of tracked files.
+     * The staging area is cleared after a commit.
+     * It is not a failure for tracked files to be missing from the working directory or changed in the working directory.
+     * If no files have been staged, abort. Print the message No changes added to the commit.
+     * Every commit must have a non-blank message. If it doesn’t, print the error message Please enter a commit message.
      * */
     public static void commit(String msg, State stateToCommit) {
         Commit newCommit = new Commit(msg, stateToCommit.getHeadCommit(), stateToCommit);
-        moveFilesInFolder(State.STAGE_DIR, Repository.BLOBS_DIR);
-        stateToCommit.clearStage();
-        stateToCommit.putBranch(stateToCommit.HEAD, newCommit.save());
+        stateToCommit.commitStage(newCommit.save());
         stateToCommit.save();
-    }
-
-    private static void moveFilesInFolder(File srcFolder, File dstFolder) {
-        File[] files = srcFolder.listFiles();
-        for (int i = 0; i < files.length; i++) {
-            try {
-                Files.move(files[i].toPath(), dstFolder.toPath().resolve(files[i].getName()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public static void debug(String msg) {
