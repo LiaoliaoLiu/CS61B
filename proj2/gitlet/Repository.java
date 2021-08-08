@@ -60,6 +60,16 @@ public class Repository {
         stateToCommit.save();
     }
 
+    /**
+     * TODO: Unstage the file if it is currently staged for addition.
+     * TODO: Stage the file for removal and remove it if it's tracked in current commit.
+     * TODO: Don't remove it unless it's tracked in current commit.
+     * */
+    public static void rm(String filename, State currentState) {
+        currentState.rmFile(filename);
+        currentState.save();
+    }
+
     public static void debug(String msg) {
         System.out.println("DEBUG: " + msg);
     }

@@ -68,14 +68,20 @@ public class State implements Serializable {
         Commit head = getHeadCommit();
         String blobHash = head.getBlobHash(filename);
         if (fileHash.equals(blobHash)) { // delete the file in STAGE if newly added file is the same as the file in commit
-            String stagedFileHash = this.addedFiles.remove(filename);
-            deleteIfExists(join(STAGE_DIR, stagedFileHash));
-            this.removedFiles.remove(filename);
+            if (isStaged(filename)) {
+                String stagedFileHash = this.addedFiles.remove(filename);
+                deleteIfExists(join(STAGE_DIR, stagedFileHash));
+                this.removedFiles.remove(filename);
+            }
         } else {
             this.addedFiles.put(filename, fileHash);
             File fileInStage = join(STAGE_DIR, fileHash);
             copyFile(fileToAdd, fileInStage);
         }
+    }
+
+    private boolean isStaged(String filename) {
+        return addedFiles.containsKey(filename);
     }
 
     private String getFileHash(File file) {
@@ -121,6 +127,34 @@ public class State implements Serializable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public void rmFile(String filename) {
+        boolean isAddedFile, isBlob;
+        isAddedFile = addedFiles.containsKey(filename);
+        isBlob = getHeadCommit().containsBlob(filename);
+        if (!(isAddedFile || isBlob)) {
+            Main.terminateWithMsg(true, "No reason to remove the file.");
+        }
+        if (isAddedFile) {
+            this.unstage(filename);
+            isAddedFile = addedFiles.containsKey(filename);
+            if (!isAddedFile) System.out.println("DEBUG: file unstaged");
+        }
+        if (isBlob) {
+            stageForRm(filename);
+            if (this.removedFiles.contains(filename)) System.out.println("DEBUG: file staged for removal");
+            File file = join(Repository.CWD, filename);
+            deleteIfExists(file);
+        }
+    }
+
+    private void unstage(String filename) {
+        this.addedFiles.remove(filename);
+    }
+
+    private void stageForRm(String filename) {
+        this.removedFiles.add(filename);
     }
 
 }

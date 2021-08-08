@@ -77,4 +77,8 @@ public class Commit implements Serializable {
         return blobs.get(filename);
     }
 
+    public boolean containsBlob(String filename) {
+        return blobs.containsKey(filename);
+    }
+
 }
