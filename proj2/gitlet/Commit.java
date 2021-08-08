@@ -8,10 +8,8 @@ import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.HashMap;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
- *  @author TODO
+ *  This class should only deal with its own persistence.
+ *  @author Liaoliao Liu
  */
 public class Commit implements Serializable {
     /**
@@ -27,28 +25,47 @@ public class Commit implements Serializable {
     /** The timestamp of this Commit. */
     private Date timestamp;
     /** The name-sha1 map of blobs */
-    public HashMap<String, String> blobs;
-    // TODO: parent's commit
+    private HashMap<String, String> blobs;
+    /** The parent commit(s) hash*/
+    private String[] parents;
 
     /* TODO: fill in the rest of this class. */
     public Commit() {
         this.message = "initial commit";
         this.timestamp = new Date(0);
-        blobs = new HashMap<>();
+        this.blobs = new HashMap<>();
+        this.parents = null;
     }
 
-    public Commit(String msg) {
+    public Commit(String msg, Commit parent, State stateToCommit) {
         this.message = msg;
         this.timestamp = new Date();
+        this.parents = new String[]{parent.getHash()};
+        this.blobs = parent.blobs;
+        updateBlobs(stateToCommit);
     }
+
+    private void updateBlobs(State stateToCommit) {
+        this.blobs.putAll(stateToCommit.addedFiles);
+        for (String file : stateToCommit.removedFiles) {
+            this.blobs.remove(file);
+        }
+    }
+
 
     /** Save a commit and return the sha1 string of the commit. */
     public String save() {
         byte[] data = serialize(this);
-        String commitS = sha1(data);
-        File commit = join(Repository.COMMITS_DIR, commitS);
+        String commitHash = sha1(data);
+        File commit = join(Repository.COMMITS_DIR, commitHash);
         writeContents(commit, data);
-        return commitS;
+        return commitHash;
+    }
+
+    public String getHash() {
+        byte[] data = serialize(this);
+        String commitHash = sha1(data);
+        return commitHash;
     }
 
     public static Commit readCommit(String hash) {

@@ -1,9 +1,8 @@
 package gitlet;
 
 import java.io.File;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import static gitlet.Utils.*;
 
@@ -50,5 +49,32 @@ public class Repository {
         currentState.save();
     }
 
+    /**
+     * TODO: save a snapshot of tracked files
+     * TODO: The staging area is cleared after a commit.
+     * TODO: It is not a failure for tracked files to be missing from the working directory or changed in the working directory.
+     * TODO: Gitlet doesn't support detached HEAD state.
+     * */
+    public static void commit(String msg, State stateToCommit) {
+        Commit newCommit = new Commit(msg, stateToCommit.getHeadCommit(), stateToCommit);
+        moveFilesInFolder(State.STAGE_DIR, Repository.BLOBS_DIR);
+        stateToCommit.clearStage();
+        stateToCommit.putBranch(stateToCommit.HEAD, newCommit.save());
+        stateToCommit.save();
+    }
 
+    private static void moveFilesInFolder(File srcFolder, File dstFolder) {
+        File[] files = srcFolder.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            try {
+                Files.move(files[i].toPath(), dstFolder.toPath().resolve(files[i].getName()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void debug(String msg) {
+        System.out.println("DEBUG: " + msg);
+    }
 }

@@ -26,6 +26,10 @@ public class Main {
                 Repository.add(args[1]);
                 break;
             // TODO: FILL THE REST IN
+            case "commit":
+                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                Repository.commit(args[1], State.readState());
+                break;
             default:
                 terminateWithMsg(true, "No command with that name exists.");
         }
