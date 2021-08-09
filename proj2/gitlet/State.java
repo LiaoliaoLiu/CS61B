@@ -109,13 +109,14 @@ public class State implements Serializable {
     }
 
     public void commitStage(String newCommitHash) {
-        Main.terminateWithMsg(addedFiles.isEmpty() && removedFiles.isEmpty(),
-                "No changes added to the commit.");
-
         moveFilesInFolder(STAGE_DIR, Repository.BLOBS_DIR);
         this.putBranch(HEAD, newCommitHash);
         this.addedFiles = new HashMap<>();
         this.removedFiles = new HashSet<>();
+    }
+
+    public boolean isNoChangeCommit() {
+        return addedFiles.isEmpty() && removedFiles.isEmpty();
     }
 
     private static void moveFilesInFolder(File srcFolder, File dstFolder) {
@@ -139,11 +140,9 @@ public class State implements Serializable {
         if (isAddedFile) {
             this.unstage(filename);
             isAddedFile = addedFiles.containsKey(filename);
-            if (!isAddedFile) System.out.println("DEBUG: file unstaged");
         }
         if (isBlob) {
             stageForRm(filename);
-            if (this.removedFiles.contains(filename)) System.out.println("DEBUG: file staged for removal");
             File file = join(Repository.CWD, filename);
             deleteIfExists(file);
         }

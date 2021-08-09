@@ -4,6 +4,7 @@ package gitlet;
 import static gitlet.Utils.*;
 import java.io.File;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date; // TODO: You'll likely use this in this class
 import java.util.HashMap;
 
@@ -55,10 +56,26 @@ public class Commit implements Serializable {
 
     /** Save a commit and return the sha1 string of the commit. */
     public String save() {
-        byte[] data = serialize(this);
+        File commitTempFile = join(Repository.COMMITS_DIR, "temp");
+        writeObject(commitTempFile, this);
+
+        Commit thisCommit = readObject(commitTempFile, Commit.class); // See below
+        byte[] data = serialize(thisCommit);
+        // I don't know why but the hash value calculated in object creating time is different from when deserializing.
+        // That's:
+        // String hash1 = sha1(serialize(this))
+        // ## Save serialize(this) to a file and end the program.
+        // String hash2 = sha1(readObject(FileOfPrevThis, Commit.class).getHash())
+        // ## End the program
+        // String hash3 = sha1(readObject(FileOfPrevThis, Commit.class).getHash())
+        // hash2 == hash3 but != hash3
+        // Though the only difference is that hash1 value is got from `this` at the runtime when the object was created
+        // , and hash2 and hash3 are got from the object that is from deserializing the file,
+        // which should be an identical to `this`.
+
         String commitHash = sha1(data);
-        File commit = join(Repository.COMMITS_DIR, commitHash);
-        writeContents(commit, data);
+        File commitFile = join(Repository.COMMITS_DIR, commitHash);
+        commitTempFile.renameTo(commitFile);
         return commitHash;
     }
 
@@ -81,4 +98,16 @@ public class Commit implements Serializable {
         return blobs.containsKey(filename);
     }
 
+    public Commit getFirstParent() {
+        return this.parents == null ? null : readCommit(this.parents[0]);
+    }
+
+    public String getDate() {
+        SimpleDateFormat formatter = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+        return formatter.format(this.timestamp);
+    }
+
+    public String getMessage() {
+        return this.message;
+    }
 }

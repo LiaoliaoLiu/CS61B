@@ -35,6 +35,19 @@ public class Main {
                 terminateWithMsg(args.length != 2, "Incorrect operands.");
                 Repository.rm(args[1], State.readState());
                 break;
+            case "log":
+                terminateWithMsg(args.length != 1, "Incorrect operands.");
+                Repository.log(State.readState());
+                break;
+            /*
+            case "test":
+                State state = State.readState();
+                Commit second = state.getHeadCommit();
+                System.out.println("Hash: " + second.getHash());
+                Commit init = second.getFirstParent();
+                System.out.println("Hash: " + init.getHash());
+                break;
+             */
             default:
                 terminateWithMsg(true, "No command with that name exists.");
         }

@@ -50,11 +50,14 @@ public class Repository {
     /**
      * Save a snapshot of tracked files.
      * The staging area is cleared after a commit.
-     * It is not a failure for tracked files to be missing from the working directory or changed in the working directory.
-     * If no files have been staged, abort. Print the message No changes added to the commit.
-     * Every commit must have a non-blank message. If it doesn’t, print the error message Please enter a commit message.
+     * The files are staged will be moved to be the blobs of the commit,
+     * whether or not they're missing from the working directory or changed in the working directory.
+     * If no files have been staged, abort. Print the message "No changes added to the commit."
+     * Every commit must have a non-blank message. If not, print the error message "Please enter a commit message."
      * */
     public static void commit(String msg, State stateToCommit) {
+        Main.terminateWithMsg(stateToCommit.isNoChangeCommit(), "No changes added to the commit.");
+
         Commit newCommit = new Commit(msg, stateToCommit.getHeadCommit(), stateToCommit);
         stateToCommit.commitStage(newCommit.save());
         stateToCommit.save();
@@ -68,6 +71,19 @@ public class Repository {
     public static void rm(String filename, State currentState) {
         currentState.rmFile(filename);
         currentState.save();
+    }
+
+    public static void log(State currentState) {
+        Commit commit = currentState.getHeadCommit();
+        do {
+            System.out.println("===");
+            System.out.println("commit " + commit.getHash());
+            //Print Merge here
+            System.out.println("Date: " + commit.getDate());
+            System.out.println(commit.getMessage());
+            System.out.println();
+            commit = commit.getFirstParent();
+        } while (commit != null);
     }
 
     public static void debug(String msg) {
