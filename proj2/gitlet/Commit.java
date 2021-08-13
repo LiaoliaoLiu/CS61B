@@ -90,6 +90,10 @@ public class Commit implements Serializable {
         return readObject(commit, Commit.class);
     }
 
+    public static Commit readCommit(File file) {
+        return readObject(file, Commit.class);
+    }
+
     public String getBlobHash(String filename) {
         return blobs.get(filename);
     }

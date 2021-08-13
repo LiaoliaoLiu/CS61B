@@ -142,7 +142,9 @@ public class State implements Serializable {
     /** Add a file to the staging area.
      * If the current working version of the file is identical to the version in the current commit,
      * do not stage it to be added,
-     * and remove it from the staging area if it is already there */
+     * and remove it from the staging area if it is already there
+     *
+     * */
     public void addFile(String filename) {
         File fileToAdd = join(Repository.CWD, filename);
         Main.terminateWithMsg(!fileToAdd.exists(), "File does not exist.");
@@ -241,6 +243,17 @@ public class State implements Serializable {
 
     private void stageForRm(String filename) {
         this.removedFiles.add(filename);
+    }
+
+    /**
+     * */
+     public void checkoutFile(String filename, Commit commit) {
+        File blob = join(Repository.BLOBS_DIR, commit.getBlobHash(filename));
+        File thisFile = join(Repository.CWD, filename);
+        copyFile(blob, thisFile);
+
+        this.removedFiles.remove(filename);
+        this.addedFiles.remove(filename);
     }
 
 }

@@ -51,6 +51,13 @@ public class Main {
                 terminateWithMsg(args.length != 1, "Incorrect operands.");
                 Repository.status(State.readState());
                 break;
+            case "checkout":
+                if (args.length == 3)
+                    Repository.checkoutFile(args[2], State.readState());
+                else if (args.length == 4)
+                    Repository.checkoutFile(args[3], args[1], State.readState());
+
+                break;
             /*
             case "test":
                 State state = State.readState();

@@ -1,7 +1,6 @@
 package gitlet;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -171,6 +170,36 @@ public class Repository {
             if (branch.equals(currentState.HEAD)) System.out.println("*" + branch);
             else System.out.println(branch);
         }
+    }
+
+    /**
+     * Takes the version of the file as it exists in the head commit and puts it in the working directory,
+     * overwriting the version of the file that’s already there if there is one.
+     * The new version of the file is not staged. */
+    public static void checkoutFile(String filename, State currentState) {
+        checkoutFile(filename, currentState.getBranchHash(currentState.HEAD), currentState);
+    }
+
+    /**
+     * Takes the version of the file as it exists in the commit with the given id,
+     * and puts it in the working directory,
+     * overwriting the version of the file that’s already there if there is one.
+     * The new version of the file is not staged.
+     * */
+    public static void checkoutFile(String filename, String commitID, State currentState) {
+        File commitFile = getCommitHashWithShortID(commitID);
+        Main.terminateWithMsg(commitFile == null, "No commit with that id exists.");
+        Commit commit = Commit.readCommit(commitFile);
+        Main.terminateWithMsg(!commit.containsBlob(filename), "File does not exist in that commit.");
+
+        currentState.checkoutFile(filename, commit);
+        currentState.save();
+    }
+
+    private static File getCommitHashWithShortID(String substring) {
+        File dir = COMMITS_DIR;
+        File[] files = dir.listFiles((d, name) -> name.contains(substring));
+        return files.length > 0 ? files[0] : null;
     }
 
     public static void debug(String msg) {
