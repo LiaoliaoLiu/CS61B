@@ -110,4 +110,8 @@ public class Commit implements Serializable {
     public String getMessage() {
         return this.message;
     }
+
+    public HashMap<String, String> getBlobsMap() {
+        return this.blobs;
+    }
 }

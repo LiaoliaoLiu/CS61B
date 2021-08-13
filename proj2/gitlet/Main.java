@@ -39,6 +39,18 @@ public class Main {
                 terminateWithMsg(args.length != 1, "Incorrect operands.");
                 Repository.log(State.readState());
                 break;
+            case "global-log":
+                terminateWithMsg(args.length != 1, "Incorrect operands.");
+                Repository.globallog();
+                break;
+            case "find":
+                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                Repository.find(args[1]);
+                break;
+            case "status":
+                terminateWithMsg(args.length != 1, "Incorrect operands.");
+                Repository.status(State.readState());
+                break;
             /*
             case "test":
                 State state = State.readState();

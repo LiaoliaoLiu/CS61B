@@ -1,6 +1,10 @@
 package gitlet;
 
 import java.io.File;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static gitlet.Utils.*;
 
@@ -76,14 +80,97 @@ public class Repository {
     public static void log(State currentState) {
         Commit commit = currentState.getHeadCommit();
         do {
-            System.out.println("===");
-            System.out.println("commit " + commit.getHash());
-            //Print Merge here
-            System.out.println("Date: " + commit.getDate());
-            System.out.println(commit.getMessage());
-            System.out.println();
+            Repository.printlog(commit);
             commit = commit.getFirstParent();
         } while (commit != null);
+    }
+
+    private static void printlog(Commit commit) {
+        System.out.println("===");
+        System.out.println("commit " + commit.getHash());
+        //Print Merge here
+        System.out.println("Date: " + commit.getDate());
+        System.out.println(commit.getMessage());
+        System.out.println();
+    }
+
+    public static void globallog() {
+        List<String> fileArray = plainFilenamesIn(COMMITS_DIR);
+        for (String commitFilenames : fileArray) {
+            Commit commit = Commit.readCommit(commitFilenames);
+            printlog(commit);
+        }
+    }
+
+    /**
+     * TODO: Prints out the ids of all commits that have the given commit message, one per line.
+     * TODO: The commit message is a single operand; to indicate a multiword message, put the operand in quotation marks.
+     */
+    public static void find(String message) {
+        boolean foundCommit = false;
+        List<String> fileArray = plainFilenamesIn(COMMITS_DIR);
+        for (String commitFilenames : fileArray) {
+            Commit commit = Commit.readCommit(commitFilenames);
+            String commitMsg = commit.getMessage();
+            if (commitMsg.contains(message)) {
+                System.out.println(commit.getHash());
+                foundCommit = true;
+            }
+        }
+        Main.terminateWithMsg(!foundCommit, "Found no commit with that message.");
+    }
+
+    /**
+     * Entries should be listed in lexicographic order, using the Java string-comparison order.
+     * A file in the working directory is “modified but not staged” if it is
+     * - Tracked in the current commit, changed in the working directory, but not staged; or
+     * - Staged for addition, but with different contents than in the working directory; or
+     * - Staged for addition, but deleted in the working directory; or
+     * - Not staged for removal, but tracked in the current commit and deleted from the working directory.
+     * The final category (“Untracked Files”) is for files present in the working directory
+     * - but neither staged for addition nor tracked. This includes files that
+     * - have been staged for removal, but then re-created without Gitlet’s knowledge.
+     * */
+    public static void status(State currentState) {
+        typeOfStatus(currentState, "branches", new BranchPrintFunction());
+        typeOfStatus(currentState, "Staged Files");
+        typeOfStatus(currentState, "Removed Files");
+        typeOfStatus(currentState, "Modifications Not Staged For Commit");
+        typeOfStatus(currentState, "Untracked Files");
+    }
+
+    private static void typeOfStatus(State currentState, String type) {
+        typeOfStatus(currentState, type, new DefaultPrintFunction());
+    }
+
+    private static void typeOfStatus(State currentState, String type, EntryPrintFunction f) {
+        ArrayList<String> entries = new ArrayList<>();
+        for (String entry : currentState.getStatusIter(type)) {
+            entries.add(entry);
+        }
+        Collections.sort(entries);
+        System.out.println("=== " + type + " ===");
+        for (String entry : entries) {
+            f.print(entry, currentState);
+        }
+        System.out.println();
+    }
+
+    private interface EntryPrintFunction {
+        void print(String entry, State currentState);
+    }
+
+    private static class DefaultPrintFunction implements EntryPrintFunction {
+        public void print(String entry, State currentState) {
+            System.out.println(entry);
+        }
+    }
+
+    private static class BranchPrintFunction implements EntryPrintFunction {
+        public void print(String branch, State currentState) {
+            if (branch.equals(currentState.HEAD)) System.out.println("*" + branch);
+            else System.out.println(branch);
+        }
     }
 
     public static void debug(String msg) {

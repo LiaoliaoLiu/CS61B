@@ -8,6 +8,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /** Represents the repository's persistence object.
  *
@@ -23,6 +25,8 @@ public class State implements Serializable {
     public static final File STATE = join(Repository.GITLET_DIR, "state");
     /** The staging area directory. */
     public static final File STAGE_DIR = join(Repository.GITLET_DIR, "stage");
+    /** The runtime object for status command. */
+    private transient Status status = null;
 
     /** Initialize the persistence of the repository. It should only be called by init(). */
     public State(String sha1) {
@@ -49,6 +53,85 @@ public class State implements Serializable {
     /** Return the commit Hash to which the branch `name` points. */
     public String getBranchHash(String name) {
         return branches.get(name);
+    }
+
+    private class Status {
+        Set<String> modFilesStrings;
+        Set<String> stagedFilesStrings;
+        Set<String> branchesStrings;
+        Set<String> removedFileStrings;
+        Set<String> untrackedFilesStrings;
+
+        Status() {
+            modFilesStrings = new HashSet<>();
+            stagedFilesStrings = new HashSet<>();
+            untrackedFilesStrings = new HashSet<>();
+            handleWorkingDirFilesStatus();
+            branchesStrings = State.this.branches.keySet();
+            removedFileStrings = State.this.removedFiles;
+        }
+
+        void handleWorkingDirFilesStatus() {
+            Commit head = State.this.getHeadCommit();
+            HashMap<String, String> trackedFiles = head.getBlobsMap();
+            HashMap<String, String> stagedAddedFiles = State.this.addedFiles;
+            List<String> workingDirFiles = plainFilenamesIn(Repository.CWD);
+            for (String filename : workingDirFiles) {
+                // The status command won't change the state's persistence, so it should be fine to mutate.
+                String trackedFileHash = trackedFiles.remove(filename);
+                boolean isTracked = (trackedFileHash != null);
+                String stagedFileHash = stagedAddedFiles.remove(filename);
+                boolean isStaged = (stagedFileHash != null);
+                String workingDirFileHash = getFileHash(filename, Repository.CWD);
+
+                if (isTracked && !isStaged) {
+                    if (State.this.removedFiles.contains(filename)) {
+                        // Untracked files include files that have been staged for removal, but then re-created.
+                        untrackedFilesStrings.add(filename);
+                    } else if (!workingDirFileHash.equals(trackedFileHash)) {
+                        // Tracked in the current commit, changed in the working directory, but not staged
+                        modFilesStrings.add(filename + " (modified)");
+                    }
+                } else if (isStaged) {
+                    if (!workingDirFileHash.equals(stagedFileHash)) {
+                        // Staged for addition, but with different contents than in the working directory
+                        modFilesStrings.add(filename + " (modified)");
+                    } else {
+                        // Otherwise, it's just a staged file.
+                        stagedFilesStrings.add(filename);
+                    }
+                } else {
+                    // Present in the working directory but neither staged for addition nor tracked.
+                    untrackedFilesStrings.add(filename);
+                }
+            }
+
+            // Not staged for removal, but tracked in the current commit and deleted from the working directory.
+            for (String filename : trackedFiles.keySet()) {
+                if (!State.this.removedFiles.contains(filename)) {
+                    modFilesStrings.add(filename + " (deleted)");
+                }
+            }
+
+            // Staged for addition, but deleted in the working directory
+            for (String filename : stagedAddedFiles.keySet()) {
+                modFilesStrings.add(filename+ " (deleted)");
+            }
+        }
+
+    }
+
+    public Iterable<String> getStatusIter(String type) {
+        Iterable<String> typeIter = null;
+        if (status == null) status = new Status();
+
+        if (type.equals("branches")) typeIter = status.branchesStrings;
+        else if (type.equals("Staged Files")) typeIter = status.stagedFilesStrings;
+        else if (type.equals("Removed Files")) typeIter = status.removedFileStrings;
+        else if (type.equals("Modifications Not Staged For Commit"))
+            typeIter = status.modFilesStrings;
+        else if (type.equals("Untracked Files")) typeIter = status.untrackedFilesStrings;
+        return typeIter;
     }
 
     /** Save the changes to the file. */
@@ -86,6 +169,11 @@ public class State implements Serializable {
 
     private String getFileHash(File file) {
         return sha1(readContents(file));
+    }
+
+    private String getFileHash(String name, File dir) {
+        File file = join(dir, name);
+        return file.exists() ? getFileHash(file) : null;
     }
 
     private static void copyFile(File src, File dst) {
@@ -139,7 +227,6 @@ public class State implements Serializable {
         }
         if (isAddedFile) {
             this.unstage(filename);
-            isAddedFile = addedFiles.containsKey(filename);
         }
         if (isBlob) {
             stageForRm(filename);
