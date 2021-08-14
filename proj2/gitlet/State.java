@@ -82,9 +82,9 @@ public class State implements Serializable {
                 boolean isTracked = (trackedFileHash != null);
                 String stagedFileHash = stagedAddedFiles.remove(filename);
                 boolean isStaged = (stagedFileHash != null);
-                String workingDirFileHash = getFileHash(filename, Repository.CWD);
 
                 if (isTracked && !isStaged) {
+                    String workingDirFileHash = getFileHash(filename, Repository.CWD);
                     if (State.this.removedFiles.contains(filename)) {
                         // Untracked files include files that have been staged for removal, but then re-created.
                         untrackedFilesStrings.add(filename);
@@ -93,6 +93,7 @@ public class State implements Serializable {
                         modFilesStrings.add(filename + " (modified)");
                     }
                 } else if (isStaged) {
+                    String workingDirFileHash = getFileHash(filename, Repository.CWD);
                     if (!workingDirFileHash.equals(stagedFileHash)) {
                         // Staged for addition, but with different contents than in the working directory
                         modFilesStrings.add(filename + " (modified)");

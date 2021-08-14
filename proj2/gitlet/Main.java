@@ -1,9 +1,7 @@
 package gitlet;
 
-import java.io.File;
-
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author Liaoliao Liu
  */
 public class Main {
 
@@ -11,21 +9,17 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        // TODO: what if args is empty?
         terminateWithMsg(args.length == 0, "Please enter a command.");
         String firstArg = args[0];
         switch(firstArg) {
             case "init":
-                // TODO: handle the `init` command
                 terminateWithMsg(args.length != 1, "Incorrect operands.");
                 Repository.init();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
                 terminateWithMsg(args.length != 2, "Incorrect operands.");
-                Repository.add(args[1]);
+                Repository.add(args[1], State.readState());
                 break;
-            // TODO: FILL THE REST IN
             case "commit":
                 terminateWithMsg(args.length > 2, "Incorrect operands.");
                 terminateWithMsg(args.length == 1, "Please enter a commit message.");
@@ -56,7 +50,6 @@ public class Main {
                     Repository.checkoutFile(args[2], State.readState());
                 else if (args.length == 4)
                     Repository.checkoutFile(args[3], args[1], State.readState());
-
                 break;
             /*
             case "test":
@@ -73,7 +66,7 @@ public class Main {
     }
 
     /**
-     * Print `msg` if `cond` is false.
+     * Print `msg` if `cond` is true.
      *
      * @param cond Condition
      * @param msg Message

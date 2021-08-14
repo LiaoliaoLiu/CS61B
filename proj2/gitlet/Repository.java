@@ -44,8 +44,7 @@ public class Repository {
         new State(initCommit.save());
     }
 
-    public static void add(String filename) {
-        State currentState = State.readState();
+    public static void add(String filename, State currentState) {
         currentState.addFile(filename);
         currentState.save();
     }
@@ -58,18 +57,18 @@ public class Repository {
      * If no files have been staged, abort. Print the message "No changes added to the commit."
      * Every commit must have a non-blank message. If not, print the error message "Please enter a commit message."
      * */
-    public static void commit(String msg, State stateToCommit) {
-        Main.terminateWithMsg(stateToCommit.isNoChangeCommit(), "No changes added to the commit.");
+    public static void commit(String msg, State currentState) {
+        Main.terminateWithMsg(currentState.isNoChangeCommit(), "No changes added to the commit.");
 
-        Commit newCommit = new Commit(msg, stateToCommit.getHeadCommit(), stateToCommit);
-        stateToCommit.commitStage(newCommit.save());
-        stateToCommit.save();
+        Commit newCommit = new Commit(msg, currentState.getHeadCommit(), currentState);
+        currentState.commitStage(newCommit.save());
+        currentState.save();
     }
 
     /**
-     * TODO: Unstage the file if it is currently staged for addition.
-     * TODO: Stage the file for removal and remove it if it's tracked in current commit.
-     * TODO: Don't remove it unless it's tracked in current commit.
+     * Unstage the file if it is currently staged for addition.
+     * Stage the file for removal and remove it if it's tracked in current commit.
+     * Don't remove it unless it's tracked in current commit.
      * */
     public static void rm(String filename, State currentState) {
         currentState.rmFile(filename);
@@ -102,8 +101,8 @@ public class Repository {
     }
 
     /**
-     * TODO: Prints out the ids of all commits that have the given commit message, one per line.
-     * TODO: The commit message is a single operand; to indicate a multiword message, put the operand in quotation marks.
+     * Prints out the ids of all commits that have the given commit message, one per line.
+     * The commit message is a single operand; to indicate a multiword message, put the operand in quotation marks.
      */
     public static void find(String message) {
         boolean foundCommit = false;
