@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /** Represents the repository's persistence object.
  *
@@ -18,8 +15,13 @@ import java.util.Set;
 public class State implements Serializable {
     /** The branchName-SHA1 HashMap. */
     private HashMap<String, String> branches;
+    /** The HEAD pointer. */
     public String HEAD;
+    /** The detached head flag. */
+    public boolean isDetached = false;
+    /** The removed files' filename set. */
     public HashSet<String> removedFiles;
+    /** The added files' filename-SHA1 HashMap. */
     public HashMap<String, String> addedFiles;
     /** The file stores branches persistence. */
     public static final File STATE = join(Repository.GITLET_DIR, "state");
@@ -27,6 +29,8 @@ public class State implements Serializable {
     public static final File STAGE_DIR = join(Repository.GITLET_DIR, "stage");
     /** The runtime object for status command. */
     private transient Status status = null;
+    /** The runtime set for storing all tracked filenames. */
+    private transient HashSet<String> trackedFiles = null;
 
     /** Initialize the persistence of the repository. It should only be called by init(). */
     public State(String sha1) {
@@ -39,16 +43,27 @@ public class State implements Serializable {
         save();
     }
 
-    /** Add a branch called name and serialize the class. */
-    public void putBranch(String name, String sha1) {
-        branches.put(name, sha1);
+    /** Add a branch called `name`.*/
+    public void putBranch(String name, String sha1) { branches.put(name, sha1); }
+
+    /** Remove a branch called `name`. */
+    public void rmBranch(String name) {
+        Main.terminateWithMsg(!branches.containsKey(name), "A branch with that name does not exist.");
+        Main.terminateWithMsg(HEAD.equals(name), "Cannot remove the current branch.");
+
+        branches.remove(name);
     }
 
     /** Return the commit object to which the branch `name` points. */
     public Commit getBranchCommit(String name) { return Commit.readCommit(getBranchHash(name)); }
 
     /** Return the commit object to which the HEAD points. */
-    public Commit getHeadCommit() {return getBranchCommit(HEAD);}
+    public Commit getHeadCommit() {
+        if (isDetached) {
+            return Commit.readCommit(HEAD);
+        }
+        return getBranchCommit(HEAD);
+    }
 
     /** Return the commit Hash to which the branch `name` points. */
     public String getBranchHash(String name) {
@@ -140,11 +155,11 @@ public class State implements Serializable {
         writeObject(STATE, this);
     }
 
-    /** Add a file to the staging area.
+    /**
+     * Add a file to the staging area.
      * If the current working version of the file is identical to the version in the current commit,
      * do not stage it to be added,
      * and remove it from the staging area if it is already there
-     *
      * */
     public void addFile(String filename) {
         File fileToAdd = join(Repository.CWD, filename);
@@ -162,8 +177,24 @@ public class State implements Serializable {
         } else {
             this.addedFiles.put(filename, fileHash);
             File fileInStage = join(STAGE_DIR, fileHash);
-            copyFile(fileToAdd, fileInStage);
+            if (!this.isDuplicateFile(fileHash)) {
+                copyFile(fileToAdd, fileInStage);
+            }
         }
+    }
+
+    private boolean isDuplicateFile(String hash) {
+        return isDuplicateFile(Repository.BLOBS_DIR, hash) || isDuplicateFile(STAGE_DIR, hash);
+    }
+
+    private boolean isDuplicateFile(File dir, String filename) {
+        List<String> filenamesInDir = plainFilenamesIn(dir);
+        for (String f : filenamesInDir) {
+            if (f.equals(filename)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isStaged(String filename) {
@@ -201,9 +232,16 @@ public class State implements Serializable {
 
     public void commitStage(String newCommitHash) {
         moveFilesInFolder(STAGE_DIR, Repository.BLOBS_DIR);
-        this.putBranch(HEAD, newCommitHash);
+        if (!isDetached) {
+            this.putBranch(HEAD, newCommitHash);
+        }
+        cleanStagingArea();
+    }
+
+    private void cleanStagingArea() {
         this.addedFiles = new HashMap<>();
         this.removedFiles = new HashSet<>();
+        cleanDir(STAGE_DIR);
     }
 
     public boolean isNoChangeCommit() {
@@ -257,5 +295,56 @@ public class State implements Serializable {
         this.addedFiles.remove(filename);
     }
 
+    /**
+     * TODO: Takes all files in the commit at the head of the given branch, and puts them in the working directory,
+     * TODO: overwriting the versions of the files that are already there if they exist.
+     * TODO: the given branch will now be considered the current branch
+     * TODO: Any files that are tracked in the current branch but are not present in the checked-out branch are deleted.
+     * TODO: The staging area is cleared, unless the checked-out branch is the current branch
+     * */
+    public void checkoutBranch(String name) {
+        this.checkoutCommit(this.getBranchCommit(name));
+        HEAD = name;
+        isDetached = false;
+    }
+
+    private void checkoutCommit(Commit commit) {
+        File workingDir = Repository.CWD;
+        // Because there's no .gitignore in gitlet,
+        // which means all the files that are not staged or in blobs are untracked files.
+        // So I just delete all the working dir files.
+        cleanDir(workingDir);
+
+        for (Map.Entry<String, String> entry: commit.getBlobsMap().entrySet()) {
+            File blob = join(Repository.BLOBS_DIR, entry.getValue());
+            File file = join(Repository.CWD, entry.getKey());
+            copyFile(blob, file);
+        }
+
+        cleanStagingArea();
+    }
+
+    private void cleanDir(File dir) {
+        List<String> filenamesInDir = plainFilenamesIn(dir);
+        for (String filename : filenamesInDir) {
+            File file = join(Repository.CWD, filename);
+            deleteIfExists(file);
+        }
+    }
+
+    public boolean isTrackedFiles(String filename) {
+        if (trackedFiles == null) {
+            trackedFiles = new HashSet<>();
+            trackedFiles.addAll(addedFiles.keySet());
+            trackedFiles.addAll(getHeadCommit().getBlobsMap().keySet());
+        }
+
+        return trackedFiles.contains(filename);
+    }
+
+    public void reset(Commit commit) {
+        this.checkoutCommit(commit);
+        putBranch(HEAD, commit.getHash());
+    }
 }
 

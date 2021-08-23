@@ -186,7 +186,7 @@ public class Repository {
      * The new version of the file is not staged.
      * */
     public static void checkoutFile(String filename, String commitID, State currentState) {
-        File commitFile = getCommitHashWithShortID(commitID);
+        File commitFile = getCommitFileWithShortID(commitID);
         Main.terminateWithMsg(commitFile == null, "No commit with that id exists.");
         Commit commit = Commit.readCommit(commitFile);
         Main.terminateWithMsg(!commit.containsBlob(filename), "File does not exist in that commit.");
@@ -195,13 +195,68 @@ public class Repository {
         currentState.save();
     }
 
-    private static File getCommitHashWithShortID(String substring) {
+    private static File getCommitFileWithShortID(String substring) {
         File dir = COMMITS_DIR;
         File[] files = dir.listFiles((d, name) -> name.contains(substring));
         return files.length > 0 ? files[0] : null;
     }
 
+    private static String getCommitHashWithShortID(String substring) {
+        File commitFile = getCommitFileWithShortID(substring);
+        return commitFile.getName();
+    }
+
     public static void debug(String msg) {
         System.out.println("DEBUG: " + msg);
+    }
+
+    /**
+     * TODO: Creates a new branch with the given name, and points it at the current head commit.
+     * TODO: This command does NOT immediately switch to the newly created branch (just as in real Git).
+     * TODO: Before you ever call branch, your code should be running with a default branch called “master”.
+     * */
+    public static void branch(String name, State currentState) {
+        Main.terminateWithMsg(currentState.getBranchHash(name) != null,
+                "A branch with that name already exists.");
+
+        currentState.putBranch(name, currentState.getHeadCommit().getHash());
+        currentState.save();
+    }
+    
+    public static void checkoutBranch(String name, State currentState) {
+        Main.terminateWithMsg(currentState.getBranchHash(name) == null, "No such branch exists.");
+        Main.terminateWithMsg(currentState.HEAD.equals(name), "No need to checkout the current branch.");
+
+        // Check untracked files
+        List<String> workingDirFilenames = plainFilenamesIn(CWD);
+        for (String filename : workingDirFilenames) {
+            Main.terminateWithMsg(!currentState.isTrackedFiles(filename),
+                    "There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
+        currentState.checkoutBranch(name);
+        currentState.save();
+    }
+
+    public static void rmBranch(String name, State currentState) {
+        currentState.rmBranch(name);
+        currentState.save();
+    }
+
+    /**
+     * TODO: Checks out all the files tracked by the given commit.
+     * TODO: Removes tracked files that are not present in that commit.
+     * TODO: Also moves the current branch’s head to that commit node. > Isn't this detached Head?
+     * No, ->current branch's head<- means current branch.
+     * TODO: The staging area is cleared. The command is essentially checkout of an arbitrary commit that
+     * also changes the current branch head.
+     * */
+    public static void reset(String commitID, State currentState) {
+        File commitFile = getCommitFileWithShortID(commitID);
+        Main.terminateWithMsg(commitFile == null, "No commit with that id exists.");
+
+        Commit commit = Commit.readCommit(commitFile);
+        currentState.reset(commit);
+        currentState.save();
     }
 }

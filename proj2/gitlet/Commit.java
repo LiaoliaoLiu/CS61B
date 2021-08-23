@@ -102,6 +102,14 @@ public class Commit implements Serializable {
         return blobs.containsKey(filename);
     }
 
+    /*
+    * You should never do this in a Commit object.
+    * When you reset to an old commit, blobs are still here so this function will fail.
+    public boolean isDublicate(String hash) {
+        return blobs.containsValue(hash);
+    }
+     */
+
     public Commit getFirstParent() {
         return this.parents == null ? null : readCommit(this.parents[0]);
     }

@@ -50,6 +50,20 @@ public class Main {
                     Repository.checkoutFile(args[2], State.readState());
                 else if (args.length == 4)
                     Repository.checkoutFile(args[3], args[1], State.readState());
+                else if (args.length == 2)
+                    Repository.checkoutBranch(args[1], State.readState());
+                break;
+            case "branch":
+                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                Repository.branch(args[1], State.readState());
+                break;
+            case "rm-branch":
+                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                Repository.rmBranch(args[1], State.readState());
+                break;
+            case "reset":
+                terminateWithMsg(args.length != 2, "Incorrect operands.");
+                Repository.reset(args[1], State.readState());
                 break;
             /*
             case "test":
